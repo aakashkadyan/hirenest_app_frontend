@@ -12,10 +12,10 @@ A modern job portal platform built with React and Vite, allowing employers to po
 
 ## Tech Stack
 
-- React 19
-- Vite 6
-- Tailwind CSS 4
-- React Router 7
+- React 18
+- Vite 5
+- Tailwind CSS 3
+- React Router 6
 - React Toastify for notifications
 
 ## Environment Setup
