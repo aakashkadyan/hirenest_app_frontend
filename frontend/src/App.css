@@ -1,6 +1,4 @@
 @import "tailwindcss";
-
-@import 'react-quill/dist/quill.snow.css';
 body {
   font-family: Arial, sans-serif;
   margin: 0;
