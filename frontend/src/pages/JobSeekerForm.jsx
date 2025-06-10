@@ -22,7 +22,7 @@ const JobSeekerForm = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await fetch(`http://localhost:5002/api/jobseekers/${userId}`);
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_JOBSEEKERS_ENDPOINT || '/api/jobseekers'}/${userId}`);
         if (res.ok) {
           const data = await res.json();
           setFormData(prev => ({
@@ -91,8 +91,8 @@ const JobSeekerForm = () => {
       }
   
       const url = isProfileExists
-        ? `http://localhost:5002/api/jobseekers/${userId}` // PUT: update existing
-        : `http://localhost:5002/api/jobseekers`;          // POST: create new
+        ? `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_JOBSEEKERS_ENDPOINT || '/api/jobseekers'}/${userId}` // PUT: update existing
+        : `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_JOBSEEKERS_ENDPOINT || '/api/jobseekers'}`;          // POST: create new
   
       const res = await fetch(url, {
         method: isProfileExists ? 'PUT' : 'POST',

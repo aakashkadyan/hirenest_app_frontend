@@ -53,7 +53,7 @@ const JobSeekerDashboard = () => {
   useEffect(() => {
     if (activeTab === 'apply-jobs') {
       // Fetch jobs based on search criteria
-      let url = `http://localhost:5002/api/jobs?offset=0&limit=100`; // Fetch more jobs initially
+      let url = `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_JOBS_ENDPOINT || '/api/jobs'}?offset=0&limit=100`; // Fetch more jobs initially
       if (searchTerm) url += `&search=${encodeURIComponent(searchTerm)}`;
       if (location) url += `&location=${encodeURIComponent(location)}`;
 
@@ -91,7 +91,7 @@ const JobSeekerDashboard = () => {
   useEffect(() => {
     const fetchAppliedJobs = async () => {
       try {
-        const res = await fetch(`http://localhost:5002/api/applications/${userId}`);
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_APPLICATIONS_ENDPOINT || '/api/applications'}/${userId}`);
         const data = await res.json();
         if (data?.applications) {
           setAppliedJobs(data.applications);
@@ -111,7 +111,7 @@ const JobSeekerDashboard = () => {
     if (!appliedJobs.find((j) => j._id === job._id)) {
       try {
         // Fetch JobSeeker profile using the userId
-        const resumeRes = await fetch(`http://localhost:5002/api/jobseekers/${userId}`);
+        const resumeRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_JOBSEEKERS_ENDPOINT || '/api/jobseekers'}/${userId}`);
         const resumeData = await resumeRes.json();
 
         if (!resumeRes.ok || !resumeData._id) {
@@ -123,7 +123,7 @@ const JobSeekerDashboard = () => {
         const jobSeekerId = resumeData._id;
 
         // Submit application
-        const response = await fetch('http://localhost:5002/api/applications', {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_APPLICATIONS_ENDPOINT || '/api/applications'}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -164,7 +164,7 @@ const JobSeekerDashboard = () => {
     
   const handleRemoveApplication = async (jobId) => {
     try {
-      const res = await fetch(`http://localhost:5002/api/applications/${jobId}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_APPLICATIONS_ENDPOINT || '/api/applications'}/${jobId}`, {
         method: 'DELETE',
       });
 

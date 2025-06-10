@@ -160,7 +160,7 @@ const EmployerDashboard = () => {
 
   const sendEmail = async (to, subject, text) => {
     try {
-      const res = await fetch('http://localhost:5002/api/send-email', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_EMAIL_ENDPOINT || '/api/send-email'}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -185,7 +185,7 @@ const EmployerDashboard = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch('http://localhost:5002/api/jobs', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_JOBS_ENDPOINT || '/api/jobs'}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(jobForm),
@@ -219,7 +219,7 @@ const EmployerDashboard = () => {
   const fetchPostedJobs = async () => {
     try {
       const userId = localStorage.getItem('userId');
-      const response = await fetch(`http://localhost:5002/api/jobs?postedBy=${userId}`);
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_JOBS_ENDPOINT || '/api/jobs'}?postedBy=${userId}`);
       const data = await response.json();
       if (response.ok) {
         setPostedJobs(data.jobs);
@@ -243,7 +243,7 @@ const EmployerDashboard = () => {
       }
   
       // Fetch applications based on employer's posted jobs
-      const response = await fetch(`http://localhost:5002/api/applications?postedBy=${employerId}`);
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_APPLICATIONS_ENDPOINT || '/api/applications'}?postedBy=${employerId}`);
 
       const data = await response.json();
 
@@ -263,7 +263,7 @@ const EmployerDashboard = () => {
 
     const updateApplicationStatus = async (applicationId, newStatus) => {
     try {
-      const response = await fetch(`http://localhost:5002/api/applications/${applicationId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_APPLICATIONS_ENDPOINT || '/api/applications'}/${applicationId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -292,7 +292,7 @@ const EmployerDashboard = () => {
 
   const handleViewResume = async (userId) => {
     try {
-      const res = await fetch(`http://localhost:5002/api/jobseekers/${userId}`);
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_JOBSEEKERS_ENDPOINT || '/api/jobseekers'}/${userId}`);
       const data = await res.json();
   
       if (!res.ok) {
@@ -357,7 +357,7 @@ const EmployerDashboard = () => {
 
   const handleJobDelete = async (jobId) => {
     try {
-      const response = await fetch(`http://localhost:5002/api/jobs/${jobId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_JOBS_ENDPOINT || '/api/jobs'}/${jobId}`, {
         method: 'DELETE',
       });
       const data = await response.json();
@@ -620,19 +620,19 @@ const EmployerDashboard = () => {
         <div className="flex flex-col md:flex-row md:items-center md:space-x-4 space-y-4 md:space-y-0 mb-4">
           <AutoSuggestInput
             placeholder="Filter by Job Title"
-            fetchUrl={`http://localhost:5002/api/applications/suggestions/jobs?employerId=${localStorage.getItem('userId')}`}
+            fetchUrl={`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_APPLICATIONS_SUGGESTIONS_ENDPOINT || '/api/applications/suggestions'}/jobs?employerId=${localStorage.getItem('userId')}`}
             onSelect={(val) => handleFilter('jobTitle', val)}
             value={filters.jobTitle}
           />
           <AutoSuggestInput
             placeholder="Filter by Applicant"
-            fetchUrl={`http://localhost:5002/api/applications/suggestions/applicants?employerId=${localStorage.getItem('userId')}`}
+            fetchUrl={`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_APPLICATIONS_SUGGESTIONS_ENDPOINT || '/api/applications/suggestions'}/applicants?employerId=${localStorage.getItem('userId')}`}
             onSelect={(val) => handleFilter('applicant', val)}
             value={filters.applicant}
           />
           <AutoSuggestInput
             placeholder="Filter by Location"
-            fetchUrl={`http://localhost:5002/api/applications/suggestions/locations?employerId=${localStorage.getItem('userId')}`}
+            fetchUrl={`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_APPLICATIONS_SUGGESTIONS_ENDPOINT || '/api/applications/suggestions'}/locations?employerId=${localStorage.getItem('userId')}`}
             onSelect={(val) => handleFilter('location', val)}
             value={filters.location}
           />

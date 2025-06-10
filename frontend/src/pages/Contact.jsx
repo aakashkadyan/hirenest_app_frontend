@@ -24,7 +24,7 @@ const Contact = () => {
     setStatus('Sending...');
   
     try {
-      const res = await fetch('http://localhost:5002/api/email/contact', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_EMAIL_CONTACT_ENDPOINT || '/api/email/contact'}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

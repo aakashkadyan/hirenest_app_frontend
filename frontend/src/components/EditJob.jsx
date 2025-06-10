@@ -22,7 +22,7 @@ const EditJob = () => {
   useEffect(() => {
     const fetchJobData = async () => {
       try {
-        const response = await fetch(`http://localhost:5002/api/jobs/${jobId}`);
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_JOBS_ENDPOINT || '/api/jobs'}/${jobId}`);
         const data = await response.json();
   
         if (response.ok) {
@@ -82,7 +82,7 @@ const EditJob = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch(`http://localhost:5002/api/jobs/${jobId}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_JOBS_ENDPOINT || '/api/jobs'}/${jobId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

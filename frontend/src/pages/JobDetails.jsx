@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
-import config from '../config';
 
 const JobDetails = () => {
   const { jobId } = useParams();
@@ -11,7 +10,7 @@ const JobDetails = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetch(`${config.API_URL}/api/jobs/${jobId}`)
+    fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_JOBS_ENDPOINT || '/api/jobs'}/${jobId}`)
       .then((res) => res.json())
       .then((data) => setJob(data.job))
       .catch((err) => console.error('Error fetching job:', err));
@@ -30,7 +29,7 @@ const JobDetails = () => {
 
   useEffect(() => {
     if (job?.postedBy) {
-      fetch(`${config.API_URL}/api/employerprofile/${job.postedBy}`)
+      fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_EMPLOYER_PROFILE_ENDPOINT || '/api/employerprofile'}/${job.postedBy}`)
         .then((res) => res.json())
         .then((data) => setEmployerProfile(data))
         .catch((err) => console.error('Error fetching employer profile:', err));

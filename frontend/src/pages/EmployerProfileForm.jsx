@@ -17,7 +17,7 @@ const EmployerProfileForm = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const res = await fetch(`http://localhost:5002/api/employerprofile/${userId}`);
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_EMPLOYER_PROFILE_ENDPOINT || '/api/employerprofile'}/${userId}`);
         if (res.ok) {
           const data = await res.json();
           setFormData({
@@ -50,8 +50,8 @@ const EmployerProfileForm = () => {
     e.preventDefault();
 
     const url = profileId
-      ? `http://localhost:5002/api/employerprofile/${profileId}`
-      : `http://localhost:5002/api/employerprofile`;
+      ? `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_EMPLOYER_PROFILE_ENDPOINT || '/api/employerprofile'}/${profileId}`
+      : `${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_EMPLOYER_PROFILE_ENDPOINT || '/api/employerprofile'}`;
 
     const method = profileId ? 'PUT' : 'POST';
 
