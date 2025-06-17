@@ -13,6 +13,7 @@ const JobSeekerForm = () => {
     experience: [{ company: '', role: '', startDate: '', endDate: '', description: '' }],
     education: [{ institution: '', degree: '', fieldOfStudy: '', startYear: '', endYear: '' }],
     resume: null,
+    resumeFileName: null,
     jobPreferences: {
       preferredJobType: 'full-time',
       preferredLocation: ''
@@ -57,7 +58,12 @@ const JobSeekerForm = () => {
   };
 
   const handleResumeUpload = (e) => {
-    setFormData(prev => ({ ...prev, resume: e.target.files[0] }));
+    const file = e.target.files[0];
+    setFormData(prev => ({
+      ...prev,
+      resume: file || null,
+      resumeFileName: file ? file.name : null
+    }));
   };
 
   const updateNestedArray = (section, index, field, value) => {
@@ -88,6 +94,9 @@ const JobSeekerForm = () => {
   
       if (formData.resume) {
         data.append('resume', formData.resume);
+        data.append('resumeFileName', formData.resumeFileName);
+      } else {
+        data.append('resumeFileName', '');
       }
   
       const url = isProfileExists
@@ -211,18 +220,21 @@ console.log('formData:', formData);
 
       {/* Resume */}
       <div>
-        <label className="block text-sm font-medium text-gray-700">Resume (PDF)</label>
-        <input
-          type="file"
-          accept="application/pdf"
-          onChange={handleResumeUpload}
-          className="mt-1 w-full p-2 border border-blue-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-300"
-        />
-        {formData.resume && (
-          <p className="text-sm text-gray-600 mt-1">
-            Selected file: <strong>{formData.resume.name}</strong>
-          </p>
-        )}
+        <label className="block text-sm font-medium text-gray-700">Attach Resume</label>
+        <div className="relative mt-1 w-full">
+          <input
+            id="resume-upload"
+            type="file"
+            accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            onChange={handleResumeUpload}
+            className="hidden"
+          />
+          <label htmlFor="resume-upload" className="flex items-center px-4 py-2 bg-gray-100 border border-blue-300 rounded-lg cursor-pointer hover:bg-gray-200 transition">
+            <svg className="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" /></svg>
+            <span>{formData.resumeFileName || 'Upload or drag and drop'}</span>
+          </label>
+          <span className="block text-xs text-gray-500 mt-1">Use a PDF, doc, or docx file – make sure it's 2MB or less</span>
+        </div>
       </div>
 
       {/* Job Preferences */}
