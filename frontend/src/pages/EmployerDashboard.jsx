@@ -22,6 +22,7 @@ const EmployerDashboard = () => {
   const [applications, setApplications] = useState([]);
   const [applicationsPage, setApplicationsPage] = useState(0);
   const [selectedJobSeeker, setSelectedJobSeeker] = useState(null);
+  const [hasCompanyProfile, setHasCompanyProfile] = useState(false);
   const jobsPerPage = 5;
   
   const applicationsPerPage = 5;
@@ -119,11 +120,27 @@ const EmployerDashboard = () => {
         postedBy: userId,
       }));
 
+      // Check if employer has a company profile
+      checkCompanyProfile(userId);
     } else {
       toast.error('User ID not found. Please log in again.');
       navigate('/login');
     }
   }, []);
+
+  const checkCompanyProfile = async (userId) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_EMPLOYER_PROFILE_ENDPOINT || '/api/employerprofile'}/${userId}`);
+      if (response.ok) {
+        setHasCompanyProfile(true);
+      } else {
+        setHasCompanyProfile(false);
+      }
+    } catch (error) {
+      console.log('No company profile found');
+      setHasCompanyProfile(false);
+    }
+  };
 
   useEffect(() => {
     if (activeTab === 'posted-jobs') {
@@ -290,8 +307,28 @@ const EmployerDashboard = () => {
   
   
 
-  const handleViewResume = async (userId) => {
+  const handleViewResume = async (application) => {
     try {
+      // First check if there's an uploaded resume file
+      if (application.resume && application.resume.webViewLink) {
+        console.log('Opening uploaded resume:', application.resume.webViewLink);
+        window.open(application.resume.webViewLink, '_blank');
+        return;
+      }
+
+      // If no uploaded resume, check if it's a quick apply (no full profile)
+      if (application.applicationMethod === 'quick-apply' && !application.applicant) {
+        toast.info('This is a quick application. Only the uploaded resume is available.');
+        return;
+      }
+
+      // Generate PDF from profile details for full-profile applications without uploaded resume
+      if (!application.applicant || !application.applicant.user) {
+        toast.error('Unable to fetch applicant profile details');
+        return;
+      }
+
+      const userId = application.applicant.user._id;
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_JOBSEEKERS_ENDPOINT || '/api/jobseekers'}/${userId}`);
       const data = await res.json();
   
@@ -321,13 +358,13 @@ const EmployerDashboard = () => {
   
       // Title
       doc.setFontSize(16);
-      doc.text('Resume', 105, 20, null, null, 'center');
+      doc.text('Resume (Generated from Profile)', 105, 20, null, null, 'center');
   
       // Basic Info
       doc.setFontSize(14);
       doc.text(`Name: ${seeker.user.name}`, 20, 40);
       doc.text(`Email: ${seeker.user.email}`, 20, 50);
-      doc.text(`Location: ${seeker.user.location}`, 20, 60);
+      doc.text(`Location: ${seeker.user.location || 'N/A'}`, 20, 60);
       doc.text(`Phone: ${seeker.phone || 'N/A'}`, 20, 70);
   
       // Optional: Table for structured info
@@ -350,7 +387,7 @@ const EmployerDashboard = () => {
       window.open(blobUrl, '_blank');
     } catch (err) {
       console.error(err);
-      toast.error('Error generating resume');
+      toast.error('Error viewing resume');
     }
   };
   
@@ -382,9 +419,33 @@ const EmployerDashboard = () => {
   const currentJobs = filteredJobs.slice(indexOfFirstJob, indexOfLastJob);
   
   const tabs = [
-    { id: 'post-jobs', label: 'Post Jobs →' },
-    { id: 'posted-jobs', label: 'Posted Jobs →' },
-    { id: 'applications', label: 'Applications →' },
+    { 
+      id: 'post-jobs', 
+      label: 'Post Jobs', 
+      icon: (
+        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+      )
+    },
+    { 
+      id: 'posted-jobs', 
+      label: 'Posted Jobs', 
+      icon: (
+        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2-2v2m8 0V6a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V8a2 2 0 012-2V6" />
+        </svg>
+      )
+    },
+    { 
+      id: 'applications', 
+      label: 'Applications', 
+      icon: (
+        <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      )
+    },
   ];
 
   return (
@@ -400,17 +461,56 @@ const EmployerDashboard = () => {
 
       <main className="grid grid-cols-12 gap-4 m-4">
         <aside className="col-span-3 bg-white p-4 rounded shadow h-fit">
+          {/* Company Profile Status */}
+          <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <h3 className="text-sm font-semibold text-blue-800 mb-2">Company Profile</h3>
+            {hasCompanyProfile ? (
+              <div className="text-xs text-green-700">
+                <div className="flex items-center mb-2">
+                  <svg className="w-4 h-4 mr-2 text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                  Profile Complete
+                </div>
+                <p className="mb-2">Your company profile helps job seekers learn more about your organization.</p>
+                <button
+                  onClick={() => navigate('/employerprofileform')}
+                  className="w-full bg-blue-500 text-white text-xs px-3 py-2 rounded hover:bg-blue-600 transition"
+                >
+                  Update Profile
+                </button>
+              </div>
+            ) : (
+              <div className="text-xs text-orange-700">
+                <div className="flex items-center mb-2">
+                  <svg className="w-4 h-4 mr-2 text-orange-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 15.5c-.77.833.192 2.5 1.732 2.5z" />
+                  </svg>
+                  Profile Incomplete
+                </div>
+                <p className="mb-2">Create your company profile to help applicants learn more about your organization and increase application rates!</p>
+                <button
+                  onClick={() => navigate('/employerprofileform')}
+                  className="w-full bg-orange-500 text-white text-xs px-3 py-2 rounded hover:bg-orange-600 transition"
+                >
+                  Create Profile
+                </button>
+              </div>
+            )}
+          </div>
+
           <nav className="flex flex-col space-y-2">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`text-left px-3 py-2 rounded ${
+                className={`flex items-center text-left px-3 py-2 rounded ${
                   activeTab === tab.id
                     ? 'bg-blue-100 text-blue-700 font-semibold'
                     : 'hover:bg-gray-100'
                 }`}
               >
+                {tab.icon}
                 {tab.label}
               </button>
             ))}
@@ -430,6 +530,21 @@ const EmployerDashboard = () => {
                 </div>
               )}
             </div>
+
+            {/* Information Note */}
+            {!hasCompanyProfile && (
+              <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-start">
+                  <svg className="w-5 h-5 mr-2 text-yellow-600 mt-0.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div className="text-sm">
+                    <p className="text-yellow-800 font-medium">You can post jobs without a company profile!</p>
+                    <p className="text-yellow-700 mt-1">However, having a complete company profile increases application rates by up to 40% as job seekers can learn more about your organization.</p>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <form onSubmit={handleJobSubmit} className="space-y-4 p-4 border border-blue-400 bg-blue-50 rounded-lg">
               <div>
@@ -661,23 +776,50 @@ const EmployerDashboard = () => {
               key={app._id}
               className="bg-white p-4 rounded-lg border border-gray-300 shadow"
             >
-              <h3 className="text-lg font-semibold text-blue-700">
-                Applicant: {app?.applicant?.user?.name}
-              </h3>
-              <p className="text-sm text-gray-600">
-                Email: {app?.applicant?.user?.email}
-              </p>
+              {/* Application Method Badge */}
+              <div className="flex justify-between items-start mb-2">
+                <div>
+                  <h3 className="text-lg font-semibold text-blue-700">
+                    Applicant: {app?.applicant?.user?.name || app?.applicantInfo?.name}
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Email: {app?.applicant?.user?.email || app?.applicantInfo?.email}
+                  </p>
+                </div>
+                <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                  app.applicationMethod === 'quick-apply' 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-blue-100 text-blue-800'
+                }`}>
+                  {app.applicationMethod === 'quick-apply' ? 'Quick Apply' : 'Full Profile'}
+                </span>
+              </div>
 
-              {app?.resume?.url && (
-                <a
-                  href={app.resume.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-500 underline text-sm"
-                >
-                  View Resume
-                </a>
-              )}
+              {/* Resume Status */}
+              <div className="mb-2">
+                {app.resume && app.resume.webViewLink ? (
+                  <div className="flex items-center space-x-2">
+                    <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span className="text-sm text-green-700 font-medium">
+                      Resume uploaded: {app.resume.fileName || 'Resume.pdf'}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex items-center space-x-2">
+                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span className="text-sm text-gray-500">
+                      {app.applicationMethod === 'quick-apply' 
+                        ? 'No resume file available' 
+                        : 'Resume will be generated from profile'
+                      }
+                    </span>
+                  </div>
+                )}
+              </div>
 
               {app.coverLetter && (
                 <div className="mt-2">
@@ -712,10 +854,13 @@ const EmployerDashboard = () => {
                 ) : (
                   <button
                     onClick={() => {
+                      const applicantEmail = app?.applicant?.user?.email || app?.applicantInfo?.email;
+                      const applicantName = app?.applicant?.user?.name || app?.applicantInfo?.name;
+                      
                       sendEmail(
-                        app?.applicant?.user?.email,
+                        applicantEmail,
                         `Application Status - ${app.job.title}`,
-                        `Hi ${app?.applicant?.user?.name},\n\nYour application has been reviewed for the position of ${app.job.title}. We will get back to you shortly.\n\nBest regards,\nRecruitment Team`
+                        `Hi ${applicantName},\n\nYour application has been reviewed for the position of ${app.job.title}. We will get back to you shortly.\n\nBest regards,\nRecruitment Team`
                       );
                       updateApplicationStatus(app._id, 'reviewed');
                     }}
@@ -727,8 +872,20 @@ const EmployerDashboard = () => {
                 )}
 
                 <button
-                  onClick={() => handleViewResume(app.applicant.user._id)}
-                  className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600 text-sm"
+                  onClick={() => handleViewResume(app)}
+                  className={`px-3 py-1 rounded text-sm text-white ${
+                    (app.applicationMethod === 'quick-apply' && (!app.resume || !app.resume.webViewLink))
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-blue-500 hover:bg-blue-600'
+                  }`}
+                  disabled={app.applicationMethod === 'quick-apply' && (!app.resume || !app.resume.webViewLink)}
+                  title={
+                    (app.applicationMethod === 'quick-apply' && (!app.resume || !app.resume.webViewLink))
+                      ? 'No resume file available for this quick application'
+                      : app.resume && app.resume.webViewLink
+                        ? 'View uploaded resume file'
+                        : 'Generate resume from profile details'
+                  }
                 >
                   View Resume
                 </button>
@@ -738,10 +895,13 @@ const EmployerDashboard = () => {
                 ) : (
                   <button
                     onClick={() => {
+                      const applicantEmail = app?.applicant?.user?.email || app?.applicantInfo?.email;
+                      const applicantName = app?.applicant?.user?.name || app?.applicantInfo?.name;
+                      
                       sendEmail(
-                        app?.applicant?.user?.email,
+                        applicantEmail,
                         `Application Status - ${app.job.title}`,
-                        `Hi ${app?.applicant?.user?.name},\n\nThank you for your application for the position of ${app.job.title}. Congratulations! You've been shortlisted for this position. We will contact you soon with the next steps.\n\nBest regards,\nRecruitment Team`
+                        `Hi ${applicantName},\n\nThank you for your application for the position of ${app.job.title}. Congratulations! You've been shortlisted for this position. We will contact you soon with the next steps.\n\nBest regards,\nRecruitment Team`
                       );
                       updateApplicationStatus(app._id, 'shortlisted');
                     }}
@@ -757,10 +917,13 @@ const EmployerDashboard = () => {
                 ) : (
                   <button
                     onClick={() => {
+                      const applicantEmail = app?.applicant?.user?.email || app?.applicantInfo?.email;
+                      const applicantName = app?.applicant?.user?.name || app?.applicantInfo?.name;
+                      
                       sendEmail(
-                        app?.applicant?.user?.email,
+                        applicantEmail,
                         `Application Status - ${app.job.title}`,
-                        `Hi ${app?.applicant?.user?.name},\n\nThank you for your application for the position of ${app.job.title}. Unfortunately at this time, we are unable to move forward with your application. We encourage you to stay connected with us for future opportunities.\n\nBest regards,\nRecruitment Team`
+                        `Hi ${applicantName},\n\nThank you for your application for the position of ${app.job.title}. Unfortunately at this time, we are unable to move forward with your application. We encourage you to stay connected with us for future opportunities.\n\nBest regards,\nRecruitment Team`
                       );
                       updateApplicationStatus(app._id, 'rejected');
                     }}

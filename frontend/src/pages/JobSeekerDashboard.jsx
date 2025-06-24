@@ -105,17 +105,97 @@ const JobSeekerDashboard = () => {
     fetchAppliedJobs();
   }, [userId]);
 
+  const handleQuickApply = async (job) => {
+    const userId = localStorage.getItem("userId");
+    const userName = localStorage.getItem("userName");
+    const userEmail = localStorage.getItem("userEmail");
+    
+    if (!userName || !userEmail) {
+      toast.error("User information not found. Please log in again.");
+      return;
+    }
+
+    // Create a modal or prompt for quick application
+    const resumeFile = document.createElement('input');
+    resumeFile.type = 'file';
+    resumeFile.accept = '.pdf,.doc,.docx';
+    resumeFile.style.display = 'none';
+    document.body.appendChild(resumeFile);
+
+    resumeFile.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) {
+        document.body.removeChild(resumeFile);
+        return;
+      }
+
+      try {
+        // Create a temporary profile or apply directly
+        const formData = new FormData();
+        formData.append('job', job._id);
+        formData.append('applicantName', userName);
+        formData.append('applicantEmail', userEmail);
+        formData.append('resume', file);
+        formData.append('coverLetter', `I am interested in the ${job.title} position and would like to apply. Please find my resume attached.`);
+
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_APPLICATIONS_ENDPOINT || '/api/applications'}/quick-apply`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.ok) {
+          const updatedApplied = [...appliedJobs, { ...job, status: 'pending' }];
+          setAppliedJobs(updatedApplied);
+          localStorage.setItem(`appliedJobs_${userId}`, JSON.stringify(updatedApplied));
+          
+          setJobs(prevJobs => prevJobs.filter((j) => j._id !== job._id));
+          setAllFetchedJobs(prevJobs => prevJobs.filter((j) => j._id !== job._id));
+          
+          toast.success("Quick application submitted! Consider creating a full profile for better opportunities.");
+        } else {
+          toast.error("Failed to submit quick application. Please try the regular application process.");
+        }
+      } catch (error) {
+        console.error("Error in quick apply:", error);
+        toast.error("Error submitting quick application.");
+      }
+      
+      document.body.removeChild(resumeFile);
+    };
+
+    resumeFile.click();
+  };
+
   const handleApply = async (job) => {
     const userId = localStorage.getItem("userId");
   
     if (!appliedJobs.find((j) => j._id === job._id)) {
       try {
-        // Fetch JobSeeker profile using the userId
+        // Check if JobSeeker profile exists
         const resumeRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}${import.meta.env.VITE_API_JOBSEEKERS_ENDPOINT || '/api/jobseekers'}/${userId}`);
+        
+        if (!resumeRes.ok || resumeRes.status === 404) {
+          // Profile doesn't exist - offer to create one
+          const shouldCreateProfile = window.confirm(
+            `To apply for jobs, you need to create your JobSeeker profile first.\n\n` +
+            `This includes your bio, skills, experience, and resume.\n\n` +
+            `Would you like to create your profile now? The job "${job.title}" will be saved for you.`
+          );
+          
+          if (shouldCreateProfile) {
+            // Save the job they want to apply to
+            localStorage.setItem('pendingJobApplication', JSON.stringify(job));
+            // Redirect to profile creation
+            navigate('/jobseekerform');
+          } else {
+            toast.info("You can create your profile anytime from the sidebar to start applying for jobs.");
+          }
+          return;
+        }
+
         const resumeData = await resumeRes.json();
 
-        if (!resumeRes.ok || !resumeData._id) {
-          console.error("Failed to fetch JobSeeker profile.");
+        if (!resumeData._id) {
           toast.error("Failed to fetch your profile. Please try again.");
           return;
         }
@@ -252,8 +332,25 @@ const JobSeekerDashboard = () => {
       {/* Dashboard */}
       <main className="grid grid-cols-12 gap-4 m-4">
         {/* Sidebar */}
-        <aside className="col-span-3 bg-white p-4 rounded shadow h-fit">
-          <nav className="flex flex-col space-y-2">
+        <aside className="col-span-3 bg-white p-6 rounded shadow">
+          <h2 className="text-lg font-bold text-blue-600 mb-4">Dashboard</h2>
+          
+          {/* Profile Status Check */}
+          <div className="mb-6 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <h3 className="text-sm font-semibold text-yellow-800 mb-2">Profile Status</h3>
+            <p className="text-xs text-yellow-700 mb-2">
+              Having a complete profile increases your chances of getting hired by 75%!
+            </p>
+            <button
+              onClick={() => navigate('/jobseekerform')}
+              className="w-full bg-yellow-500 text-white text-sm px-3 py-2 rounded hover:bg-yellow-600 transition"
+            >
+              {/* This will be dynamically updated based on profile existence */}
+              Create/Update Profile
+            </button>
+          </div>
+
+          <nav className="space-y-2">
             {tabs.map((tab) => {
               const count = tabCounts[tab.id] || 0;
 
@@ -284,6 +381,25 @@ const JobSeekerDashboard = () => {
           {activeTab === 'apply-jobs' && (
             <div>
               <h2 className="text-xl text-blue-600 font-bold mb-4">Apply for Jobs</h2>
+
+              {/* Application Methods Info */}
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <h3 className="text-lg font-semibold text-blue-800 mb-2">Application Methods</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="flex items-start space-x-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-2"></div>
+                    <div>
+                      <strong>Apply:</strong> Uses your complete profile with bio, skills, experience, and education. Best for showcasing your full qualifications.
+                    </div>
+                  </div>
+                  <div className="flex items-start space-x-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
+                    <div>
+                      <strong>Quick Apply:</strong> Apply instantly with just your resume. Perfect for quick applications when you're browsing jobs.
+                    </div>
+                  </div>
+                </div>
+              </div>
 
               <div className="flex flex-wrap gap-4 mb-6">
                 <input
@@ -342,6 +458,16 @@ const JobSeekerDashboard = () => {
                             }}
                           >
                             Apply
+                          </button>
+                          <button
+                            className="bg-green-500 text-white px-3 py-2 rounded-md hover:bg-green-600 text-sm font-semibold"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleQuickApply(job);
+                            }}
+                            title="Apply quickly with just your resume"
+                          >
+                            Quick Apply
                           </button>
                           <button
                             className="bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600 text-sm font-semibold"

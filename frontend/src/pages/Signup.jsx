@@ -3,6 +3,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import { Link } from "react-router";
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 
 const Signup = () => {
@@ -37,15 +38,39 @@ const Signup = () => {
 
       const data = await res.json();
       if (res.ok) {
-        alert('Signup successful! Please login.');
+        toast.success('Signup successful! Please login.', {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
         
-        navigate('/login');
+        // Navigate to login after a short delay to let user see the success message
+        setTimeout(() => {
+          navigate('/login');
+        }, 1500);
       } else {
-        alert('Error: ' + data.error);
+        toast.error('Error: ' + data.error, {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
       }
     } catch (err) {
       console.error(err);
-      alert('An error occurred during signup');
+      toast.error('An error occurred during signup', {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     } finally {
       setLoading(false);
     }

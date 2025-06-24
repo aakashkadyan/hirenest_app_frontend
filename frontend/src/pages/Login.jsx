@@ -38,6 +38,7 @@ const Login = () => {
             localStorage.setItem('userRole', data.user.role);
             localStorage.setItem('userId', data.user._id);
             localStorage.setItem('userName', data.user.name);
+            localStorage.setItem('userEmail', data.user.email);
 
             //alert('Login successful!');
            

@@ -5,6 +5,7 @@ import About from './pages/About'
 import Login from './pages/Login'
 import Contact from './pages/Contact'
 import Signup from './pages/Signup'
+import Help from './pages/Help'
 import EditJob from './components/EditJob'
 import { ToastContainer, toast } from 'react-toastify'
 import JobSeekerDashboard from './pages/JobSeekerDashboard'
@@ -27,6 +28,7 @@ function App() {
         <Route exact path ='/about' element={ <About/>}></Route>
         <Route exact path ='/career' element={<CareerPage/>}></Route>
         <Route exact path ='/contact' element={<Contact/>}></Route>
+        <Route exact path ='/help' element={<Help/>}></Route>
         <Route exact path ='/login' element={<Login/>}></Route>
         <Route exact path ='/signup' element={<Signup/>}></Route>
         <Route exact path ='/jobseekerdashboard' element={
