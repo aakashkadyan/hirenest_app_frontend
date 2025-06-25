@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 import Home from './pages/Home'
 import About from './pages/About'
@@ -15,11 +15,40 @@ import JobSeekerForm from './pages/JobSeekerForm.jsx'
 import EmployerProfileForm from './pages/EmployerProfileForm.jsx'
 import CareerPage from './pages/CareerPage'
 import JobDetails from './pages/JobDetails'
-import { BrowserRouter as Router,Routes, Route } from "react-router";
-
-
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router";
 
 function App() {
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  useEffect(() => {
+    // Clear any invalid authentication state on app startup
+    const token = localStorage.getItem('token');
+    const userRole = localStorage.getItem('userRole');
+    
+    // If there's no token or role, clear all auth data to ensure clean state
+    if (!token || !userRole) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userRole');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('userEmail');
+    }
+    
+    setIsInitialized(true);
+  }, []);
+
+  // Show loading screen while initializing
+  if (!isInitialized) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading HireNest...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Router>
       <div>
@@ -66,6 +95,8 @@ function App() {
           
           }></Route>
           
+          {/* Catch all route - redirect any unknown paths to home */}
+          <Route path="*" element={<Navigate to="/" replace />} />
           
         </Routes>
         
